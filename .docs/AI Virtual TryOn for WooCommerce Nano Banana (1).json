@@ -1,0 +1,375 @@
+{
+  "name": "AI Virtual TryOn for WooCommerce Nano Banana",
+  "nodes": [
+    {
+      "parameters": {
+        "operation": "get",
+        "productId": "4728"
+      },
+      "type": "n8n-nodes-base.wooCommerce",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -704
+      ],
+      "id": "c32fd398-6dfc-42fb-93a1-d1fb128f3c39",
+      "name": "Get a product",
+      "credentials": {
+        "wooCommerceApi": {
+          "id": "Csgcnb9eNX70lpQz",
+          "name": "WooCommerce account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.images[0].src }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [
+        -832,
+        -704
+      ],
+      "id": "9210c60f-af11-4850-b226-d92a724075f9",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "operation": "write",
+        "fileName": "=/files/{{ $json.images[0].file_name }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.readWriteFile",
+      "typeVersion": 1,
+      "position": [
+        -176,
+        -480
+      ],
+      "id": "23887808-377f-42af-bcba-c1d3fd8ec447",
+      "name": "Read/Write Files from Disk"
+    },
+    {
+      "parameters": {
+        "amount": 10
+      },
+      "id": "c2a64b9a-a25d-4d22-8baf-8a85f2785dca",
+      "name": "Wait 10 sec",
+      "type": "n8n-nodes-base.wait",
+      "position": [
+        -384,
+        -704
+      ],
+      "webhookId": "351bd496-a9cc-445c-86f6-a56189df0028",
+      "typeVersion": 1.1
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://queue.fal.run/fal-ai/nano-banana/edit",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n     \"prompt\": \"Create a photorealistic image of a female fashion model wearing this clothing item. Keep the proportions correct and make it aesthetically pleasing. The setting should be a modern studio with a seamless cyclorama and a subtle, even gradient in a slightly contrasting color for the background. Style: The model should look authentic and relatable with a natural expression and subtle smile. Technical details: Full-body shot. The image should be of superior clarity, well-exposed, and have a masterful composition.\",\n     \"image_urls\": [\n       \"{{ $json.images[0].src }}\"\n     ]\n   }",
+        "options": {}
+      },
+      "id": "4fc81458-75e7-43c9-a836-9490c9cc8f0d",
+      "name": "Create Image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -592,
+        -704
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "elgyrBfzL27CuuNR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/nano-banana/requests/{{ $('Create Image').item.json.request_id }}/status ",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "2b3a3148-b133-480c-ad51-5d2abbc0cc0d",
+      "name": "Get status",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -176,
+        -704
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "elgyrBfzL27CuuNR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "version": 2,
+            "leftValue": "",
+            "caseSensitive": true,
+            "typeValidation": "strict"
+          },
+          "combinator": "and",
+          "conditions": [
+            {
+              "id": "383d112e-2cc6-4dd4-8985-f09ce0bd1781",
+              "operator": {
+                "name": "filter.operator.equals",
+                "type": "string",
+                "operation": "equals"
+              },
+              "leftValue": "={{ $json.status }}",
+              "rightValue": "COMPLETED"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "73eec389-41f0-48b3-a8af-f01ad7b9ab05",
+      "name": "Completed?",
+      "type": "n8n-nodes-base.if",
+      "position": [
+        16,
+        -704
+      ],
+      "typeVersion": 2.2
+    },
+    {
+      "parameters": {
+        "url": "=https://queue.fal.run/fal-ai/nano-banana/requests/{{ $json.request_id }}",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "options": {}
+      },
+      "id": "7ee5a31f-0b98-4c08-893a-0a86340bb526",
+      "name": "Get Url image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -592,
+        -480
+      ],
+      "typeVersion": 4.2,
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "elgyrBfzL27CuuNR",
+          "name": "Header Auth account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.images[0].url }}",
+        "options": {}
+      },
+      "id": "b38dc33e-6aca-4f40-b4bf-01dd4c00b9b8",
+      "name": "Get File image",
+      "type": "n8n-nodes-base.httpRequest",
+      "position": [
+        -384,
+        -480
+      ],
+      "typeVersion": 4.2
+    },
+    {
+      "parameters": {
+        "resource": "product",
+        "operation": "update",
+        "productId": "={{ $('Get a product').item.json.id }}",
+        "updateFields": {},
+        "dimensionsUi": {},
+        "imagesUi": {
+          "imagesValues": [
+            {
+              "alt": "",
+              "src": "={{ $('Get File image').item.json.images[0].url }}",
+              "name": ""
+            }
+          ]
+        },
+        "metadataUi": {}
+      },
+      "id": "509c1c81-1b6d-4800-a7f5-a57c209923be",
+      "name": "WooCommerce",
+      "type": "n8n-nodes-base.wooCommerce",
+      "position": [
+        16,
+        -480
+      ],
+      "typeVersion": 1,
+      "credentials": {
+        "wooCommerceApi": {
+          "id": "Csgcnb9eNX70lpQz",
+          "name": "WooCommerce account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "474b9c3d-9ad6-4d70-8362-c1cdcd3860a7",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -1392,
+        -704
+      ],
+      "id": "4ecc4264-91e0-4f78-9f03-898b521d522f",
+      "name": "Webhook",
+      "webhookId": "474b9c3d-9ad6-4d70-8362-c1cdcd3860a7"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Get a product": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Create Image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Read/Write Files from Disk": {
+      "main": [
+        [
+          {
+            "node": "WooCommerce",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Wait 10 sec": {
+      "main": [
+        [
+          {
+            "node": "Get status",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Create Image": {
+      "main": [
+        [
+          {
+            "node": "Wait 10 sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get status": {
+      "main": [
+        [
+          {
+            "node": "Completed?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Completed?": {
+      "main": [
+        [
+          {
+            "node": "Get Url image",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Wait 10 sec",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Url image": {
+      "main": [
+        [
+          {
+            "node": "Get File image",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get File image": {
+      "main": [
+        [
+          {
+            "node": "Read/Write Files from Disk",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Get a product",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "b59d61c0-7e24-43b9-8e20-de83e8046c9f",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "e0bd13cbfa3740bbde1fab2bf553fc69c73c1b2ee6934c8be551a62d3b4d6576"
+  },
+  "id": "5Mvoz1TCF8mn0yQn",
+  "tags": []
+}
