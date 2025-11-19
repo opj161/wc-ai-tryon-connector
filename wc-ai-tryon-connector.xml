@@ -1,0 +1,702 @@
+This file is a merged representation of a subset of the codebase, containing files not matching ignore patterns, combined into a single document by Repomix.
+
+<file_summary>
+This section contains a summary of this file.
+
+<purpose>
+This file contains a packed representation of a subset of the repository's contents that is considered the most important context.
+It is designed to be easily consumable by AI systems for analysis, code review,
+or other automated processes.
+</purpose>
+
+<file_format>
+The content is organized as follows:
+1. This summary section
+2. Repository information
+3. Directory structure
+4. Repository files (if enabled)
+5. Multiple file entries, each consisting of:
+  - File path as an attribute
+  - Full contents of the file
+</file_format>
+
+<usage_guidelines>
+- This file should be treated as read-only. Any changes should be made to the
+  original repository files, not this packed version.
+- When processing this file, use the file path to distinguish
+  between different files in the repository.
+- Be aware that this file may contain sensitive information. Handle it with
+  the same level of security as you would the original repository.
+</usage_guidelines>
+
+<notes>
+- Some files may have been excluded based on .gitignore rules and Repomix's configuration
+- Binary files are not included in this packed representation. Please refer to the Repository Structure section for a complete list of file paths, including binary files
+- Files matching these patterns are excluded: **/*.log, **/cache/**, **/tmp/**, /node_modules, /.pnp, .pnp.js, /coverage, /.next/, /out/, /build, .DS_Store, *.pem, .vercel, *.tsbuildinfo, next-env.d.ts, .npm, .eslintcache, .svelte-kit/, **/.vitepress/dist, **/.vitepress/cache, *icon0.svg, vite.config.js.timestamp-*, src/app/icon0.svg, vite.config.ts.timestamp-*, !.env*, CHANGELOG.md
+- Files matching patterns in .gitignore are excluded
+- Files matching default ignore patterns are excluded
+- Files are sorted by Git change count (files with more changes are at the bottom)
+</notes>
+
+</file_summary>
+
+<directory_structure>
+assets/css/admin.css
+assets/js/admin.js
+includes/class-wc-ai-tryon-ajax.php
+includes/class-wc-ai-tryon-metabox.php
+includes/class-wc-ai-tryon-settings.php
+wc-ai-tryon-connector.php
+</directory_structure>
+
+<files>
+This section contains the contents of the repository's files.
+
+<file path="assets/css/admin.css">
+/* Container Layout */
+#wc-ai-tryon-container {
+  padding: 10px 0;
+}
+
+/* Image Grid */
+.wc-ai-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Individual Image Card */
+.wc-ai-image-option {
+  position: relative;
+  cursor: pointer;
+  border: 3px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  /* Button Reset */
+  background: none;
+  padding: 0;
+  margin: 0;
+  display: block;
+  width: 100%;
+}
+
+.wc-ai-image-option:focus {
+  outline: 2px solid #2271b1;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.wc-ai-image-option:hover {
+  opacity: 1;
+  border-color: #dcdcde; /* WP Grey */
+}
+
+.wc-ai-image-option img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+/* Selected State */
+.wc-ai-image-option.selected {
+  border-color: #2271b1; /* WP Primary Blue */
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fff inset; /* Inner white border for contrast */
+}
+
+/* Checkmark Badge for selected item */
+.wc-ai-image-option.selected::after {
+  content: "\f147"; /* Dashicon checkmark */
+  font-family: dashicons;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #2271b1;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form Elements */
+.wc-ai-prompt-wrapper {
+  margin-bottom: 15px;
+}
+
+.wc-ai-prompt-wrapper label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* Status Area */
+#wc-ai-status-area {
+  margin-top: 15px;
+  padding: 10px;
+  border-left: 4px solid transparent;
+  display: none; /* Hidden by default */
+}
+
+#wc-ai-status-area.success {
+  border-color: #46b450;
+  background: #edfaef;
+  color: #1d2327;
+}
+
+#wc-ai-status-area.error {
+  border-color: #d63638;
+  background: #fbeaea;
+}
+
+#wc-ai-status-area.loading {
+  border-color: #2271b1;
+  background: #f0f6fc;
+}
+</file>
+
+<file path="assets/js/admin.js">
+jQuery(document).ready(function($) {
+    
+    // DOM Elements
+    const $container = $('#wc-ai-tryon-container');
+    const $imageOptions = $('.wc-ai-image-option');
+    const $inputSelectedUrl = $('#wc_ai_selected_image');
+    const $btnGenerate = $('#trigger_ai_generation');
+    const $statusArea = $('#wc-ai-status-area');
+    const $promptInput = $('#wc_ai_prompt');
+
+    /**
+     * Logic: Image Selection
+     * Toggles 'selected' class and updates the hidden input field.
+     */
+    $imageOptions.on('click', function(e) {
+        e.preventDefault();
+        const $this = $(this);
+        
+        // Visual Toggle
+        $imageOptions.removeClass('selected');
+        $this.addClass('selected');
+
+        // Update Data
+        const imageUrl = $this.data('url');
+        $inputSelectedUrl.val(imageUrl);
+
+        // Enable Button
+        $btnGenerate.prop('disabled', false);
+    });
+
+    /**
+     * Logic: Trigger Generation
+     * Collects data and fires AJAX request.
+     */
+    $btnGenerate.on('click', function(e) {
+        e.preventDefault();
+
+        // Validation 1: Is an image selected?
+        const sourceUrl = $inputSelectedUrl.val();
+        if (!sourceUrl) {
+            alert(wc_ai_tryon_params.i18n.select_image);
+            return;
+        }
+
+        // Validation 2: Dirty State Check (Optional but recommended)
+        // If the user uploaded an image but didn't save, it won't be in the grid anyway.
+        // But if they changed the title/price, we should warn them.
+        /* 
+        if ( window.onbeforeunload ) {
+            if( !confirm('You have unsaved changes on this product. It is recommended to Update the product before generating images. Continue anyway?') ) {
+                return;
+            }
+        } 
+        */
+
+        // UI Loading State
+        $btnGenerate.addClass('disabled').prop('disabled', true);
+        $statusArea
+            .removeClass('success error')
+            .addClass('loading')
+            .html('<span class="spinner is-active" style="float:none; margin:0 5px 0 0;"></span>' + wc_ai_tryon_params.i18n.generating)
+            .show();
+
+        // AJAX Payload
+        const data = {
+            action: 'wc_trigger_ai_tryon', // Must match PHP wp_ajax_ hook
+            security: wc_ai_tryon_params.nonce,
+            product_id: wc_ai_tryon_params.post_id,
+            image_url: sourceUrl,
+            prompt: $promptInput.val()
+        };
+
+        // Send Request
+        $.post(wc_ai_tryon_params.ajax_url, data)
+            .done(function(response) {
+                if (response.success) {
+                    $statusArea
+                        .removeClass('loading')
+                        .addClass('success')
+                        .html('<strong>' + wc_ai_tryon_params.i18n.success + '</strong>');
+                    
+                    // Note: The button remains disabled to prevent double-submission
+                } else {
+                    handleError(response.data || wc_ai_tryon_params.i18n.error);
+                }
+            })
+            .fail(function() {
+                handleError('Server connection failed.');
+            });
+    });
+
+    /**
+     * Helper: Error Handler
+     */
+    function handleError(message) {
+        $btnGenerate.removeClass('disabled').prop('disabled', false);
+        $statusArea
+            .removeClass('loading')
+            .addClass('error')
+            .html(message);
+    }
+});
+</file>
+
+<file path="includes/class-wc-ai-tryon-ajax.php">
+<?php
+/**
+ * AJAX Handler Class
+ * 
+ * Receives the request from the Product Edit page, validates security,
+ * and forwards the payload to n8n via HTTP POST.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+if ( ! class_exists( 'WC_AI_TryOn_AJAX' ) ) :
+
+	class WC_AI_TryOn_AJAX {
+
+		public function __construct() {
+			// Hook into wp_ajax_{action}
+			// We only register for logged-in users (priv), not nopriv.
+			add_action( 'wp_ajax_wc_trigger_ai_tryon', array( $this, 'handle_request' ) );
+		}
+
+		/**
+		 * Handle the AJAX request.
+		 */
+		public function handle_request() {
+			// 1. Security Check: Verifies the nonce sent from JS
+			check_ajax_referer( 'wc_ai_tryon_nonce', 'security' );
+
+			// 2. Capability Check: Ensure user can edit products
+			if ( ! current_user_can( 'edit_products' ) ) {
+				wp_send_json_error( __( 'Unauthorized access.', 'wc-ai-tryon-connector' ) );
+			}
+
+			// 3. Input Sanitization
+			$product_id = isset( $_POST['product_id'] ) ? intval( $_POST['product_id'] ) : 0;
+			$image_url  = isset( $_POST['image_url'] )  ? esc_url_raw( $_POST['image_url'] ) : '';
+			$prompt     = isset( $_POST['prompt'] )     ? sanitize_textarea_field( $_POST['prompt'] ) : '';
+
+			if ( ! $product_id || empty( $image_url ) ) {
+				wp_send_json_error( __( 'Missing required data (Product ID or Image).', 'wc-ai-tryon-connector' ) );
+			}
+
+			// 4. Retrieve Settings (Webhook URL & Secret)
+			// WooCommerce saves integration settings in options table as: woocommerce_{id}_settings
+			$settings = get_option( 'woocommerce_wc_ai_tryon_settings', array() );
+			
+			$n8n_url    = isset( $settings['n8n_webhook_url'] ) ? $settings['n8n_webhook_url'] : '';
+			$n8n_secret = isset( $settings['n8n_secret_key'] )  ? $settings['n8n_secret_key'] : '';
+
+			if ( empty( $n8n_url ) ) {
+				wp_send_json_error( __( 'n8n Webhook URL is not configured in Settings.', 'wc-ai-tryon-connector' ) );
+			}
+
+			// 5. Construct Payload for n8n
+			$body = array(
+				'product_id'       => $product_id,
+				'source_image_url' => $image_url,
+				'prompt_override'  => $prompt,
+				'user_id'          => get_current_user_id(),
+				'timestamp'        => time(),
+			);
+
+			// 6. Send Request to n8n (Fire and Forget approach)
+			$response = wp_remote_post( $n8n_url, array(
+				'method'    => 'POST',
+				'headers'   => array(
+					'Content-Type' => 'application/json',
+					'X-AI-Auth'    => $n8n_secret, // Custom Header for Security
+				),
+				'body'      => json_encode( $body ),
+				'timeout'   => 10, // Short timeout, we don't want to wait for AI generation here
+				'blocking'  => true, // We wait for n8n to say "Received" (200 OK)
+			) );
+
+			// 7. Handle Response
+			if ( is_wp_error( $response ) ) {
+				wp_send_json_error( __( 'Failed to connect to n8n: ', 'wc-ai-tryon-connector' ) . $response->get_error_message() );
+			}
+
+			$response_code = wp_remote_retrieve_response_code( $response );
+
+			if ( $response_code >= 200 && $response_code < 300 ) {
+				wp_send_json_success( array( 'message' => __( 'Workflow triggered successfully.', 'wc-ai-tryon' ) ) );
+			} else {
+				wp_send_json_error( __( 'n8n returned an error. Code: ', 'wc-ai-tryon' ) . $response_code );
+			}
+		}
+	}
+
+endif;
+</file>
+
+<file path="includes/class-wc-ai-tryon-metabox.php">
+<?php
+/**
+ * Meta Box Display Class
+ * 
+ * Renders the UI inside the Product Edit screen.
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+if ( ! class_exists( 'WC_AI_TryOn_MetaBox' ) ) :
+
+	class WC_AI_TryOn_MetaBox {
+
+		public function __construct() {
+			// Add Meta Box
+			add_action( 'add_meta_boxes', array( $this, 'add_meta_box' ) );
+			// Enqueue Assets
+			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_assets' ) );
+		}
+
+		/**
+		 * Register the meta box.
+		 */
+		public function add_meta_box() {
+			add_meta_box(
+				'wc_ai_tryon_box',                 // ID
+				__( 'AI Virtual Try-On', 'wc-ai-tryon-connector' ), // Title
+				array( $this, 'render_content' ),  // Callback
+				'product',                         // Screen (Post Type)
+				'side',                            // Context (Side column is better for tools)
+				'high'                             // Priority
+			);
+		}
+
+		/**
+		 * Enqueue CSS and JS only on product edit pages.
+		 */
+		public function enqueue_assets( $hook ) {
+			global $post;
+
+			if ( 'post.php' !== $hook && 'post-new.php' !== $hook ) {
+				return;
+			}
+
+			if ( 'product' !== get_post_type( $post ) ) {
+				return;
+			}
+
+			// CSS
+			wp_enqueue_style( 
+				'wc-ai-tryon-connector-css', 
+				plugins_url( '../assets/css/admin.css', __FILE__ ), 
+				array(), 
+				'1.0.0' 
+			);
+
+			// JS
+			wp_enqueue_script( 
+				'wc-ai-tryon-connector-js', 
+				plugins_url( '../assets/js/admin.js', __FILE__ ), 
+				array( 'jquery' ), 
+				'1.0.0', 
+				true 
+			);
+
+			// Localize Script (Security & Data passing for Phase 3)
+			wp_localize_script( 'wc-ai-tryon-connector-js', 'wc_ai_tryon_params', array(
+				'ajax_url' => admin_url( 'admin-ajax.php' ),
+				'nonce'    => wp_create_nonce( 'wc_ai_tryon_nonce' ), // Security Token
+				'post_id'  => $post->ID,
+				'i18n'     => array(
+					'select_image' => __( 'Please select an image first.', 'wc-ai-tryon-connector' ),
+					'generating'   => __( 'Sending to AI... This may take 30 seconds.', 'wc-ai-tryon-connector' ),
+					'success'      => __( 'Generation started! The image will appear in the gallery shortly.', 'wc-ai-tryon-connector' ),
+					'error'        => __( 'Error starting workflow.', 'wc-ai-tryon-connector' ),
+				)
+			));
+		}
+
+		/**
+		 * Render the HTML content.
+		 */
+		public function render_content( $post ) {
+			$product = wc_get_product( $post->ID );
+			
+			if ( ! $product ) {
+				echo '<p>' . esc_html__( 'Product data not available.', 'wc-ai-tryon-connector' ) . '</p>';
+				return;
+			}
+
+			// 1. Get Images
+			$image_ids = array();
+			
+			// Featured Image
+			if ( $product->get_image_id() ) {
+				$image_ids[] = $product->get_image_id();
+			}
+
+			// Gallery Images
+			$gallery_ids = $product->get_gallery_image_ids();
+			if ( ! empty( $gallery_ids ) ) {
+				$image_ids = array_merge( $image_ids, $gallery_ids );
+			}
+
+			// Remove duplicates
+			$image_ids = array_unique( $image_ids );
+
+			// 2. Get Default Prompt from Settings (Phase 1)
+			$settings = get_option( 'woocommerce_wc_ai_tryon_settings', array() );
+			$default_prompt = isset( $settings['default_prompt'] ) ? $settings['default_prompt'] : '';
+
+			?>
+			<div id="wc-ai-tryon-connector-container">
+				
+				<!-- Image Selection Grid -->
+				<p class="howto"><?php esc_html_e( '1. Select source image:', 'wc-ai-tryon-connector' ); ?></p>
+				
+				<?php if ( empty( $image_ids ) ) : ?>
+					<div class="notice notice-warning inline">
+						<p><?php esc_html_e( 'No images found. Please upload product images and click Update.', 'wc-ai-tryon-connector' ); ?></p>
+					</div>
+				<?php else : ?>
+					<div class="wc-ai-image-grid">
+						<?php foreach ( $image_ids as $img_id ) : 
+							$img_url = wp_get_attachment_image_url( $img_id, 'thumbnail' );
+							$full_url = wp_get_attachment_image_url( $img_id, 'full' );
+							?>
+							<button type="button" class="wc-ai-image-option" data-url="<?php echo esc_url( $full_url ); ?>">
+								<img src="<?php echo esc_url( $img_url ); ?>" alt="<?php esc_attr_e( 'Product Image', 'wc-ai-tryon-connector' ); ?>">
+							</button>
+						<?php endforeach; ?>
+					</div>
+					<!-- Hidden input to store selection for JS -->
+					<input type="hidden" id="wc_ai_selected_image" value="">
+				<?php endif; ?>
+
+				<!-- Prompt Input -->
+				<div class="wc-ai-prompt-wrapper">
+					<label for="wc_ai_prompt"><?php esc_html_e( '2. Customize Prompt:', 'wc-ai-tryon-connector' ); ?></label>
+					<textarea id="wc_ai_prompt" class="widefat" rows="3"><?php echo esc_textarea( $default_prompt ); ?></textarea>
+				</div>
+
+				<!-- Action Button -->
+				<button type="button" id="trigger_ai_generation" class="button button-primary button-large" <?php disabled( empty( $image_ids ), true ); ?>>
+					<?php esc_html_e( 'Generate AI Model', 'wc-ai-tryon-connector' ); ?>
+				</button>
+
+				<!-- Feedback Area -->
+				<div id="wc-ai-status-area"></div>
+
+			</div>
+			<?php
+		}
+	}
+
+endif;
+</file>
+
+<file path="includes/class-wc-ai-tryon-settings.php">
+<?php
+/**
+ * Integration Settings Class
+ * 
+ * Defines the configuration fields required to connect to n8n.
+ * Located at: WooCommerce > Settings > Integration > AI Try-On
+ */
+
+defined( 'ABSPATH' ) || exit;
+
+if ( ! class_exists( 'WC_AI_TryOn_Settings' ) ) :
+
+	class WC_AI_TryOn_Settings extends WC_Integration {
+
+		/**
+		 * Constructor.
+		 */
+		public function __construct() {
+			$this->id                 = 'wc_ai_tryon';
+			$this->method_title       = __( 'AI Virtual Try-On', 'wc-ai-tryon-connector' );
+			$this->method_description = __( 'Configure the connection to your n8n workflow for AI image generation.', 'wc-ai-tryon-connector' );
+
+			// Initialize form fields and settings
+			$this->init_form_fields();
+			$this->init_settings();
+
+			// Define user set variables for easy access later
+			$this->n8n_webhook_url = $this->get_option( 'n8n_webhook_url' );
+			$this->n8n_secret_key  = $this->get_option( 'n8n_secret_key' );
+			$this->default_prompt  = $this->get_option( 'default_prompt' );
+
+			// Save settings hook (Magically handles saving via WC Settings API)
+			add_action( 'woocommerce_update_options_integration_' .  $this->id, array( $this, 'process_admin_options' ) );
+		}
+
+		/**
+		 * Initialize settings form fields.
+		 */
+		public function init_form_fields() {
+			$this->form_fields = array(
+				'section_connection' => array(
+					'title' => __( 'n8n Connection', 'wc-ai-tryon-connector' ),
+					'type'  => 'title',
+					'description' => __( 'Enter the details from your n8n Webhook node.', 'wc-ai-tryon-connector' ),
+				),
+				'n8n_webhook_url' => array(
+					'title'       => __( 'n8n Webhook URL', 'wc-ai-tryon-connector' ),
+					'type'        => 'text',
+					'description' => __( 'The Production URL of your n8n Webhook (POST method).', 'wc-ai-tryon-connector' ),
+					'desc_tip'    => true,
+					'default'     => '',
+					'placeholder' => 'https://n8n.yourdomain.com/webhook/...',
+				),
+				'n8n_secret_key' => array(
+					'title'       => __( 'Secret Header Key', 'wc-ai-tryon' ),
+					'type'        => 'password',
+					'description' => __( 'A secret string sent in the "X-AI-Auth" header to secure your webhook.', 'wc-ai-tryon' ),
+					'desc_tip'    => true,
+					'default'     => '',
+				),
+				'section_defaults' => array(
+					'title' => __( 'Generation Defaults', 'wc-ai-tryon' ),
+					'type'  => 'title',
+				),
+				'default_prompt' => array(
+					'title'       => __( 'Default AI Prompt', 'wc-ai-tryon' ),
+					'type'        => 'textarea',
+					'description' => __( 'This prompt will be pre-filled in the Product Editor. You can change it per product.', 'wc-ai-tryon' ),
+					'default'     => 'Create a photorealistic image of a female fashion model wearing this clothing item. Style: Authentic, natural expression. Setting: Modern studio.',
+					'css'         => 'min-height: 100px;',
+				),
+			);
+		}
+	}
+
+endif;
+</file>
+
+<file path="wc-ai-tryon-connector.php">
+<?php
+/**
+ * Plugin Name: WooCommerce AI Virtual Try-On Connector
+ * Plugin URI: https://dev.marcodirenzo.ch/
+ * Description: Connects the Product Editor to n8n automation workflows for AI image generation.
+ * Version: 1.0.0
+ * Author: Marco Di Renzo
+ * Author URI: https://dev.marcodirenzo.ch/
+ * Text Domain: wc-ai-tryon-connector
+ * Domain Path: /languages
+ *
+ * WC requires at least: 8.0
+ * WC tested up to: 9.0
+ *
+ * License: GPLv3
+ */
+
+// Prevent direct access to this file (Security Best Practice)
+defined( 'ABSPATH' ) || exit;
+
+/**
+ * Main Plugin Class
+ * Implements a Singleton pattern to ensure the class is initialized only once.
+ */
+if ( ! class_exists( 'WC_AI_TryOn_Connector' ) ) {
+
+	class WC_AI_TryOn_Connector {
+
+		/**
+		 * Static property to hold the single instance of the class.
+		 */
+		protected static $_instance = null;
+
+		/**
+		 * Get the instance of the class.
+		 */
+		public static function instance() {
+			if ( is_null( self::$_instance ) ) {
+				self::$_instance = new self();
+			}
+			return self::$_instance;
+		}
+
+		/**
+		 * Constructor.
+		 * Hooks into WordPress lifecycle.
+		 */
+		public function __construct() {
+			// Initialize the plugin only after all other plugins are loaded
+			add_action( 'plugins_loaded', array( $this, 'init' ) );
+		}
+
+		/**
+		 * Initialize the plugin.
+		 * Checks if WooCommerce is active before running logic.
+		 */
+		public function init() {
+			// Check if WooCommerce class exists (Dependency Check)
+			if ( ! class_exists( 'WooCommerce' ) ) {
+				add_action( 'admin_notices', function() {
+					echo '<div class="error"><p><strong>AI Try-On Connector</strong> requires WooCommerce to be installed and active.</p></div>';
+				});
+				return;
+			}
+
+			// Include the Settings Class
+			require_once dirname( __FILE__ ) . '/includes/class-wc-ai-tryon-connector-settings.php';
+
+            // Load AJAX Handler (Handles the POST request)
+			require_once dirname( __FILE__ ) . '/includes/class-wc-ai-tryon-connector-ajax.php';
+            new WC_AI_TryOn_AJAX(); // Initialize listener
+            
+            // --- NEW CODE START ---
+            // Include the Meta Box Class (Only in Admin)
+            if ( is_admin() ) {
+                require_once dirname( __FILE__ ) . '/includes/class-wc-ai-tryon-connector-metabox.php';
+                new WC_AI_TryOn_MetaBox();
+            }
+            // --- NEW CODE END ---
+
+			// Register the integration with WooCommerce
+			add_filter( 'woocommerce_integrations', array( $this, 'add_integration' ) );
+		}
+
+		/**
+		 * Add our Integration Class to the WooCommerce Integrations list.
+		 * 
+		 * @param array $integrations Current list of integrations.
+		 * @return array Modified list.
+		 */
+		public function add_integration( $integrations ) {
+			$integrations[] = 'WC_AI_TryOn_Settings';
+			return $integrations;
+		}
+	}
+
+	// Kick off the plugin
+	WC_AI_TryOn_Connector::instance();
+}
+</file>
+
+</files>

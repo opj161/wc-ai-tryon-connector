@@ -1,0 +1,107 @@
+/* Container Layout */
+#wc-ai-tryon-container {
+  padding: 10px 0;
+}
+
+/* Image Grid */
+.wc-ai-image-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Individual Image Card */
+.wc-ai-image-option {
+  position: relative;
+  cursor: pointer;
+  border: 3px solid transparent;
+  border-radius: 4px;
+  overflow: hidden;
+  transition: all 0.2s ease;
+  opacity: 0.8;
+  /* Button Reset */
+  background: none;
+  padding: 0;
+  margin: 0;
+  display: block;
+  width: 100%;
+}
+
+.wc-ai-image-option:focus {
+  outline: 2px solid #2271b1;
+  outline-offset: 2px;
+  opacity: 1;
+}
+
+.wc-ai-image-option:hover {
+  opacity: 1;
+  border-color: #dcdcde; /* WP Grey */
+}
+
+.wc-ai-image-option img {
+  display: block;
+  width: 100%;
+  height: 100px;
+  object-fit: cover;
+}
+
+/* Selected State */
+.wc-ai-image-option.selected {
+  border-color: #2271b1; /* WP Primary Blue */
+  opacity: 1;
+  box-shadow: 0 0 0 2px #fff inset; /* Inner white border for contrast */
+}
+
+/* Checkmark Badge for selected item */
+.wc-ai-image-option.selected::after {
+  content: "\f147"; /* Dashicon checkmark */
+  font-family: dashicons;
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  background: #2271b1;
+  color: #fff;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  font-size: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Form Elements */
+.wc-ai-prompt-wrapper {
+  margin-bottom: 15px;
+}
+
+.wc-ai-prompt-wrapper label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 5px;
+}
+
+/* Status Area */
+#wc-ai-status-area {
+  margin-top: 15px;
+  padding: 10px;
+  border-left: 4px solid transparent;
+  display: none; /* Hidden by default */
+}
+
+#wc-ai-status-area.success {
+  border-color: #46b450;
+  background: #edfaef;
+  color: #1d2327;
+}
+
+#wc-ai-status-area.error {
+  border-color: #d63638;
+  background: #fbeaea;
+}
+
+#wc-ai-status-area.loading {
+  border-color: #2271b1;
+  background: #f0f6fc;
+}
